@@ -37,6 +37,7 @@ df.reset_index(drop=True, inplace=True)
 scaledf = df[conf.fields]
 traindf = df[df.date<conf.split_date]
 
+#make the dataset
 train_input = []
 train_output = []
 test_input = []
@@ -58,6 +59,7 @@ train_y = np.array(train_output)
 test_x = np.array(test_input) 
 test_y = np.array(test_output)
 
+#create model by keras
 lstm_input = Input(shape=(30,6), name='lstm_input')
 lstm_output = LSTM(128, activation=atan, dropout_W=0.2, dropout_U=0.1)(lstm_input)
 Dense_output_1 = Dense(64, activation='linear', kernel_regularizer=keras.regularizers.l1(0.))(lstm_output)
@@ -69,6 +71,7 @@ model.fit(train_x, train_y, batch_size=conf.batch, nb_epoch=10, verbose=2)
 
 predictions = model.predict(test_x)
 
+#visualize the results
 plt.title('Return Rate Estimation')
 
 xindex = range(len(test_y))
