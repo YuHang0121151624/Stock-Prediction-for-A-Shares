@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Sep 21 00:01:46 2018
-
 @author: Administrator
 """
 
 import tushare as ts
-import pandas as pd
 import numpy as np
 import tensorflow as tf
 import keras
@@ -14,6 +12,11 @@ from keras.layers import Input, Dense, LSTM, merge
 from keras.models import Model
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import scale
+import traceback
+
+VISUAL_TRUE_COLOR = 'red'
+VISUAL_PRED_COLOR = 'green'
+VISUAL_ALPHA = 0.7
 
 # stimu function
 def atan(x): 
@@ -21,17 +24,38 @@ def atan(x):
 
 #visualize func
 def Visualize(true, pred):
-    #visualize the results
-    plt.title('Return Rate Estimation')
-    xindex = range(len(true))
-    true = true/10
-    plt.plot(xindex, true, color = 'red', label='true return rate')
-    plt.plot(xindex, pred, color = 'blue', label='estimation')
-    plt.xlabel('Date')
-    plt.ylabel('Return Rate')
-    plt.legend()
-    plt.show()
-    
+    try:
+        #visualize the results
+        plt.title('Return Rate Estimation')
+        xindex = range(len(true))
+        true = true/10
+        plt.plot(xindex, true, color = VISUAL_TRUE_COLOR, alpha=VISUAL_ALPHA, label='true return rate')
+        plt.plot(xindex, pred, color = VISUAL_PRED_COLOR, alpha=VISUAL_ALPHA, label='estimation')
+        plt.xlabel('Date')
+        plt.ylabel('Return Rate')
+        plt.legend()
+        plt.show()
+    except:
+        print (traceback.print_exc())
+
+def PredictWithRNN(opt, lstm_inshape, lstm_units, lstm_act, lstm_dropw, lstm_dropu):
+    try:
+        #create model by keras
+        lstm_input = Input(shape=lstm_inshape, name='lstm_input')
+        #set hyper parameters
+        lstm_output = LSTM(lstm_units, activation=atan, dropout_W=lstm_dropw, dropout_U=lstm_dropu)(lstm_input)
+        Dense_output_1 = Dense(64, activation='linear', kernel_regularizer=keras.regularizers.l1(0.))(lstm_output)
+        Dense_output_2 = Dense(16, activation='linear')(Dense_output_1)
+        predictions = Dense(1, activation=lstm_act)(Dense_output_2)
+        model = Model(input=lstm_input, output=predictions)
+        model.compile(optimizer='adam', loss='mse', metrics=['mse'])
+        model.fit(train_x, train_y, batch_size=conf.batch, nb_epoch=10, verbose=2)
+        #make predictions
+        pred = model.predict(test_x)
+        return pred
+    except:
+        print (traceback.print_exc())
+
 # basic config
 class conf:
     instrument = '600000' #code of shares
@@ -78,17 +102,7 @@ train_y = np.array(train_output)
 test_x = np.array(test_input) 
 test_y = np.array(test_output)
 
-#create model by keras
-lstm_input = Input(shape=(30,6), name='lstm_input')
-lstm_output = LSTM(128, activation=atan, dropout_W=0.2, dropout_U=0.1)(lstm_input)
-Dense_output_1 = Dense(64, activation='linear', kernel_regularizer=keras.regularizers.l1(0.))(lstm_output)
-Dense_output_2 = Dense(16, activation='linear')(Dense_output_1)
-predictions = Dense(1, activation=atan)(Dense_output_2)
-model = Model(input=lstm_input, output=predictions)
-model.compile(optimizer='adam', loss='mse', metrics=['mse'])
-model.fit(train_x, train_y, batch_size=conf.batch, nb_epoch=10, verbose=2)
-
-predictions = model.predict(test_x)
-
+#run the model
+pred_y = PredictWithRNN('adam', (30,6), 128, atan, 0.2, 0.1)
 #call visualize
-Visualize(test_y, predictions)
+Visualize(test_y, pred_y)
