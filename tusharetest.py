@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Sep 21 00:01:46 2018
+
+@author: Administrator
+"""
+
 import tushare as ts
 import pandas as pd
 import numpy as np
@@ -12,8 +19,20 @@ from sklearn.preprocessing import scale
 def atan(x): 
     return tf.atan(x)
 
+#visualize func
+def Visualize(true, pred):
+    #visualize the results
+    plt.title('Return Rate Estimation')
+    xindex = range(len(true))
+    true = true/10
+    plt.plot(xindex, true, color = 'red', label='true return rate')
+    plt.plot(xindex, pred, color = 'blue', label='estimation')
+    plt.xlabel('Date')
+    plt.ylabel('Return Rate')
+    plt.legend()
+    plt.show()
+    
 # basic config
-
 class conf:
     instrument = '600000' #code of shares
     start_date = '2005-01-01'
@@ -71,16 +90,5 @@ model.fit(train_x, train_y, batch_size=conf.batch, nb_epoch=10, verbose=2)
 
 predictions = model.predict(test_x)
 
-#visualize the results
-plt.title('Return Rate Estimation')
-
-xindex = range(len(test_y))
-test_y = test_y/10
-plt.plot(xindex, test_y, color = 'red', label='true return rate')
-plt.plot(xindex, predictions, color = 'blue', label='estimation')
-plt.xlabel('Date')
-plt.ylabel('Return Rate')
-
-plt.show()
-
-
+#call visualize
+Visualize(test_y, predictions)
